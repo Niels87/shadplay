@@ -10,38 +10,48 @@
 
 @group(0) @binding(0) var<uniform> view: View;
 
-@group(2) @binding(0) var<uniform> mouse: YourShader2D;
-struct YourShader2D{
-    mouse_pos : vec2f,
-}
-
-const SPEED:f32 = 1.0;
+const SPEED:f32 = 0.2;
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var uv = normalize_center(in.uv.xy);
     let uv0 = uv;
     let d0 = length(uv0);
-    let t = globals.time * SPEED;
-    var output = vec3f(0.0, 0.0, 0.0);
 // -----------------------------------------------------    
-    let r = 0.8; 
-    var inside = step(r, d0);
-    var outside = step(-r, -d0);
+    let t = globals.time * SPEED;
+    let g0 = 16.0;
+    let dg = 24.0;
+    // -----------------------------------------------------
+    uv *= 4.0;
 
-    var d = r - length(uv);
-    output += vec3f(0.0, 1.0*pow(0.02/abs(d), 1.8), 1.0 * pow(0.02/abs(d),1.2)) ;
+    var p1 = vec2f(0.0,0.0); 
+    var m1 = 16.0;
+    var g1 = gravity(p1, m1);
+
+    var p2 = uv + vec2f(-2.0,-2.0); 
+    var m2 = 16.0;
+    var g2 = gravity(p2, m2);
     
-    // uv = uv * rotate2D(t * 0.05);
-    var a = 0.4 * (abs(uv.x) - r);
-    a *= 1.0/(1.0 + 2.0 * abs(uv.x));
-    var l = 0.02 * outside;
-    d = uv.y + a * sin(uv.x * 4.0 * TAU - t * 8.0);
-    output += vec3f(0.0, 1.0*pow(l/abs(d), 1.8), 1.0 * pow(l/abs(d),1.2)) ;
+    var color = vec3f(0.0);
+    var uv1 = uv + p1;
+    color.x += lines(uv.x * g1) + lines(uv.y * g1);
 
-    
+    return vec4f(color, 0.3);
+}
 
-    return vec4f(output, 0.3);
+fn gravity(p: vec2<f32>, m: f32) -> f32 {
+    var d = length(p);
+    var g = 16.0 + m * 1.0 / (0.1 + 0.3 * d);
+    return g;
+    /* var color = vec3f(0.0);
+    color.x = lines(p.x * g) + lines(p.y*g);
+    return color; */
+}
+
+fn lines(f: f32) -> f32 {
+    var h = (1.0 + cos(f)) / 2.0;
+    h = pow(0.03/h, 1.5);
+    return h;
 }
 
 fn normalize_center(p: vec2<f32>) -> vec2<f32> {
